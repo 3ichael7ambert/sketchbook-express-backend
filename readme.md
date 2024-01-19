@@ -1,6 +1,6 @@
 
 ```bash
-createdb sketchbook-db
+createdb sketchbook-db 
 psql sketchbook-db < canvas-create.sql
 psql sketchbook-db < canvas-seed.sql
 ```
