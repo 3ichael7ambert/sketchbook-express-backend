@@ -12,7 +12,7 @@ if (process.env.NODE_ENV === 'production') {
     },
   });
 } else {
-  // Use SQLite for development
+
   db = new Pool({
     connectionString: getDatabaseUri(),
   });

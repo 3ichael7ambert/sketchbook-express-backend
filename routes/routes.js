@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db'); // Import your database connection module
+const db = require('../db'); 
 
 // GET all canvases
 router.get('/canvas', async (req, res, next) => {
