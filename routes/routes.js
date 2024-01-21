@@ -41,9 +41,10 @@ router.get('/canvas/:id', async (req, res, next) => {
 });
 
 // GET a random canvas
-router.get('/canvas/random', async (req, res, next) => {
+router.get('/random', async (req, res, next) => {
   try {
-    const result = await db.query('SELECT * FROM canvas_data ORDER BY RANDOM() LIMIT 1');
+    const result = await db.query('SELECT * FROM canvas_data OFFSET floor(random() * (SELECT count(*) FROM canvas_data)) LIMIT 1');
+
     if (result.rows.length === 0) {
       res.status(404).json({ error: 'No canvases available' });
     } else {
@@ -53,5 +54,8 @@ router.get('/canvas/random', async (req, res, next) => {
     next(error);
   }
 });
+
+
+
 
 module.exports = router;
