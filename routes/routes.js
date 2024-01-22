@@ -56,6 +56,28 @@ router.get('/random', async (req, res, next) => {
 });
 
 
+router.get('/canvas/:id/svg', async (req, res, next) => {
+  const { id } = req.params;
+
+  try {
+    const result = await db.query('SELECT * FROM canvas_data WHERE id = $1', [id]);
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Canvas not found' });
+    } else {
+      const svgContent = result.rows[0].data.canvasData;
+
+      // Set the content type to SVG
+      res.header('Content-Type', 'image/svg+xml');
+
+      // Send the SVG content directly
+      res.send(svgContent);
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
 
 
 module.exports = router;
