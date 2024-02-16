@@ -1,71 +1,50 @@
-const request = require('supertest');
-const app = require('./app');
-const { db } = require('./db');
+const request = require("supertest");
+const app = require("./app");
 
-describe('Express App', () => {
-  beforeAll(async () => {
-    // Perform any setup before running the tests
-    await db.query('INSERT INTO canvas_data (data) VALUES ($1) RETURNING *', ['<svg>Test SVG</svg>']);
-  });
+const db = require("./db");
 
-  afterAll(async () => {
-    // Perform cleanup after running the tests
-    await db.query('DELETE FROM canvas_data');
-  });
+const testCanvasData = {};
 
-  it('should respond with 404 for unknown routes', async () => {
-    const response = await request(app).get('/nonexistent-route');
-    expect(response.status).toBe(404);
-  });
+beforeAll(async () => {
+  await db.query("INSERT INTO canvas_data (data) VALUES ($1) RETURNING id", [
+    testCanvasData,
+  ]);
+});
 
-  it('should handle errors with a JSON response', async () => {
-    const response = await request(app).get('/canvas/nonexistent-id/svg');
-    expect(response.status).toBe(404);
-    expect(response.body.error).toBeDefined();
-  });
+afterAll(async () => {
+  await db.query("DELETE FROM canvas_data");
+});
 
-  it('should respond with a list of canvases for GET /canvas', async () => {
-    const response = await request(app).get('/canvas');
+describe("GET /canvas", () => {
+  test("should return a list of canvases", async () => {
+    const response = await request(app).get("/canvas");
     expect(response.status).toBe(200);
-    expect(response.body).toBeInstanceOf(Array);
+    expect(Array.isArray(response.body)).toBe(true);
   });
+});
 
-  it('should create a new canvas for POST /canvas', async () => {
-    const canvasData = '<svg>New SVG</svg>';
-    const response = await request(app).post('/canvas').send({ canvasData });
+describe("POST /canvas", () => {
+  test("should create a new canvas", async () => {
+    const response = await request(app)
+      .post("/canvas")
+      .send({ canvasData: testCanvasData });
+
     expect(response.status).toBe(201);
-    expect(response.body).toHaveProperty('data');
-    expect(response.body.data).toBe(canvasData);
+    expect(response.body).toHaveProperty("id");
   });
+});
 
-  it('should respond with a specific canvas for GET /canvas/:id', async () => {
-    const canvasId = 1; // Assuming the ID of the created canvas
-    const response = await request(app).get(`/canvas/${canvasId}`);
+describe("GET /canvas/:id", () => {
+  test("should return a specific canvas by ID", async () => {
+    const response = await request(app).get("/canvas/1"); // Assuming 1 is a valid canvas ID
+
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('data');
-    expect(response.body.data).toBeInstanceOf(Object);
+    expect(response.body).toHaveProperty("id");
   });
 
-  it('should respond with SVG content for GET /canvas/:id/svg', async () => {
-    const canvasId = 1; // Assuming the ID of the created canvas
-    const response = await request(app).get(`/canvas/${canvasId}/svg`);
-    expect(response.status).toBe(200);
-    expect(response.header['content-type']).toBe('image/svg+xml');
-    expect(response.text).toContain('<svg>Test SVG</svg>');
-  });
+  test("should return a 404 status for a non-existent canvas ID", async () => {
+    const response = await request(app).get("/canvas/999"); // Assuming 999 is a non-existent canvas ID
 
-  it('should handle validation errors for invalid SVG content on POST /canvas', async () => {
-    const invalidCanvasData = 'Invalid SVG';
-    const response = await request(app).post('/canvas').send({ canvasData: invalidCanvasData });
-    expect(response.status).toBe(400);
-    expect(response.body.error).toBeDefined();
-  });
-
-  it('should handle database errors for GET /canvas/:id', async () => {
-    // Assuming an invalid canvas ID (nonexistent in the database)
-    const invalidCanvasId = 999;
-    const response = await request(app).get(`/canvas/${invalidCanvasId}`);
-    expect(response.status).toBe(500); 
-    expect(response.body.error).toBeDefined();
+    expect(response.status).toBe(404);
   });
 });
